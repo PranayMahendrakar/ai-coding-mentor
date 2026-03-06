@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Analyzer</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">
+                <span class="logo-icon">&#x1F9FE;</span>
+                <div><h1>AI Resume Analyzer</h1><p>Powered by LLM + NLP</p></div>
+            </div>
+            <div class="header-actions">
+                <span id="llm-badge" class="badge badge-offline">&#x2B55; LLM Offline</span>
+                <a href="https://ollama.com" target="_blank" class="btn btn-ghost btn-sm">Setup Ollama &#x2192;</a>
+            </div>
+        </div>
+    </header>
+    <main class="main">
+        <section class="upload-section" id="upload-section">
+            <div class="upload-card">
+                <div class="upload-hero">
+                    <div class="upload-icon">&#x1F4C4;</div>
+                    <h2>Upload Your Resume</h2>
+                    <p>Get AI-powered feedback: ATS score, job matches, skill gaps, and rewriting suggestions</p>
+                </div>
+                <div id="drop-zone" class="drop-zone">
+                    <div class="drop-zone-content">
+                        <span class="drop-icon">&#x2B06;&#xFE0F;</span>
+                        <p><strong>Drag and drop your resume here</strong></p>
+                        <p class="drop-sub">or click to browse files</p>
+                        <p class="drop-formats">PDF, DOCX, TXT supported</p>
+                    </div>
+                    <input type="file" id="file-input" accept=".pdf,.docx,.txt" class="file-input">
+                </div>
+                <div class="divider"><span>OR</span></div>
+                <div class="paste-section">
+                    <label>Paste resume text:</label>
+                    <textarea id="resume-text" rows="10" placeholder="John Doe | john@email.com | github.com/johndoe
+
+SUMMARY
+Results-driven engineer...
+
+EXPERIENCE
+Senior Software Engineer | TechCorp | 2021-Present
+- Built Python APIs serving 100K+ daily requests
+
+SKILLS: Python, React, AWS, Docker, Git"></textarea>
+                </div>
+                <div class="target-role-row">
+                    <label>Target Role:</label>
+                    <select id="target-role">
+                        <option>Software Engineer</option><option>Data Scientist</option>
+                        <option>Frontend Developer</option><option>Backend Developer</option>
+                        <option>DevOps Engineer</option><option>ML Engineer</option>
+                        <option>Full Stack Developer</option><option>Product Manager</option>
+                    </select>
+                </div>
+                <button id="analyze-btn" class="btn btn-primary btn-lg" onclick="analyzeResume()">
+                    &#x1F50D; Analyze Resume
+                </button>
+            </div>
+            <div class="features-preview">
+                <div class="feature-card"><span class="f-icon">&#x1F4CA;</span><h3>ATS Score</h3><p>Detailed score breakdown with 7 categories</p></div>
+                <div class="feature-card"><span class="f-icon">&#x1F3AF;</span><h3>Job Matching</h3><p>Match score vs 8 top tech roles</p></div>
+                <div class="feature-card"><span class="f-icon">&#x1F52C;</span><h3>Skill Gap</h3><p>Missing skills and learning path</p></div>
+                <div class="feature-card"><span class="f-icon">&#x270D;&#xFE0F;</span><h3>AI Rewriting</h3><p>Weak bullets transformed with metrics</p></div>
+                <div class="feature-card"><span class="f-icon">&#x1F4BC;</span><h3>LinkedIn</h3><p>Headline, summary, and profile tips</p></div>
+                <div class="feature-card"><span class="f-icon">&#x1F916;</span><h3>LLM Analysis</h3><p>Deep insights via Llama3 + Ollama</p></div>
+            </div>
+        </section>
+
+        <section class="loading-section hidden" id="loading-section">
+            <div class="loading-card">
+                <div class="spinner"></div>
+                <h2>Analyzing Your Resume...</h2>
+                <div class="loading-steps">
+                    <div class="step" id="step-1">&#x1F4C4; Extracting text</div>
+                    <div class="step" id="step-2">&#x1F522; Calculating ATS score</div>
+                    <div class="step" id="step-3">&#x1F3AF; Matching job profiles</div>
+                    <div class="step" id="step-4">&#x1F916; Running LLM analysis</div>
+                    <div class="step" id="step-5">&#x2705; Generating report</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="results-section hidden" id="results-section">
+            <div class="results-topbar">
+                <div class="results-title">
+                    <h2>&#x1F4CB; Resume Analysis Report</h2>
+                    <p id="resume-preview-name"></p>
+                </div>
+                <button class="btn btn-outline" onclick="resetAnalysis()">&#x2190; New Analysis</button>
+            </div>
+            <div class="summary-cards">
+                <div class="summary-card ats-card">
+                    <div class="ats-score-display">
+                        <svg class="score-ring" viewBox="0 0 120 120">
+                            <circle class="ring-bg" cx="60" cy="60" r="52"/>
+                            <circle class="ring-fill" id="ats-ring" cx="60" cy="60" r="52"/>
+                        </svg>
+                        <div class="score-center">
+                            <span id="ats-score-num" class="score-num">--</span>
+                            <span class="score-label">ATS Score</span>
+                        </div>
+                    </div>
+                    <div class="ats-grade" id="ats-grade">--</div>
+                </div>
+                <div class="summary-card top-match-card">
+                    <div class="card-header"><span>&#x1F3AF; Best Job Match</span></div>
+                    <div class="match-title" id="top-match-title">--</div>
+                    <div class="match-score-bar"><div class="bar-fill" id="top-match-bar"></div></div>
+                    <div class="match-pct" id="top-match-pct">--% match</div>
+                </div>
+                <div class="summary-card impression-card">
+                    <div class="card-header"><span>&#x1F916; AI Impression</span></div>
+                    <p id="ai-impression" class="impression-text">--</p>
+                </div>
+            </div>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('ats',this)">&#x1F4CA; ATS</button>
+                <button class="tab-btn" onclick="showTab('skills',this)">&#x1F6E0;&#xFE0F; Skills</button>
+                <button class="tab-btn" onclick="showTab('jobs',this)">&#x1F4BC; Jobs</button>
+                <button class="tab-btn" onclick="showTab('gap',this)">&#x1F52C; Skill Gap</button>
+                <button class="tab-btn" onclick="showTab('ai',this)">&#x1F916; AI Insights</button>
+                <button class="tab-btn" onclick="showTab('rewrite',this)">&#x270D;&#xFE0F; Rewrite</button>
+                <button class="tab-btn" onclick="showTab('linkedin',this)">&#x1F517; LinkedIn</button>
+            </div>
+            <div class="tab-content active" id="tab-ats">
+                <div class="section-grid">
+                    <div class="panel"><h3>&#x1F4CA; ATS Score Breakdown</h3><div id="ats-breakdown"></div></div>
+                    <div class="panel"><h3>&#x1F4A1; ATS Tips</h3>
+                        <div class="tips-list">
+                            <div class="tip"><span>&#x2705;</span><p>Standard headings: Experience, Education, Skills</p></div>
+                            <div class="tip"><span>&#x2705;</span><p>Mirror keywords from job description</p></div>
+                            <div class="tip"><span>&#x2705;</span><p>Avoid tables, columns, headers/footers</p></div>
+                            <div class="tip"><span>&#x2705;</span><p>Use .docx for best ATS compatibility</p></div>
+                            <div class="tip"><span>&#x2705;</span><p>Quantify: "increased X by Y%"</p></div>
+                            <div class="tip"><span>&#x2705;</span><p>Include email, phone, LinkedIn, GitHub URL</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-content" id="tab-skills">
+                <div class="panel"><h3>&#x1F6E0;&#xFE0F; Skills Detected</h3><p class="panel-sub">Technical skills found in your resume</p><div id="skills-display"></div></div>
+            </div>
+            <div class="tab-content" id="tab-jobs">
+                <div class="panel"><h3>&#x1F4BC; Job Role Matches</h3><p class="panel-sub">Resume fit score for top tech roles</p><div id="job-matches-display"></div></div>
+            </div>
+            <div class="tab-content" id="tab-gap">
+                <div class="section-grid">
+                    <div class="panel"><h3>&#x2705; Skills You Have</h3><div id="skills-have"></div></div>
+                    <div class="panel">
+                        <h3>&#x274C; Missing Required</h3><div id="skills-missing-req"></div>
+                        <h3 style="margin-top:20px">&#x26A0;&#xFE0F; Missing Preferred</h3><div id="skills-missing-pref"></div>
+                    </div>
+                </div>
+                <div class="panel" style="margin-top:16px"><h3>&#x1F5FA;&#xFE0F; Learning Path</h3><div id="learning-path"></div></div>
+            </div>
+            <div class="tab-content" id="tab-ai">
+                <div class="section-grid">
+                    <div class="panel"><h3>&#x1F4AA; Strengths</h3><div id="ai-strengths"></div></div>
+                    <div class="panel"><h3>&#x1F527; Improvements</h3><div id="ai-improvements"></div></div>
+                </div>
+                <div class="panel" style="margin-top:16px"><h3>&#x1F4C2; Missing Sections</h3><div id="ai-missing"></div></div>
+            </div>
+            <div class="tab-content" id="tab-rewrite">
+                <div class="panel">
+                    <h3>&#x270D;&#xFE0F; AI Bullet Rewriter</h3>
+                    <p class="panel-sub">Transform weak bullets into powerful achievement statements</p>
+                    <textarea id="bullet-input" rows="4" placeholder="e.g., Worked on backend development..."></textarea>
+                    <div class="rewrite-options">
+                        <label>Role:</label>
+                        <select id="rewrite-role"><option>Software Engineer</option><option>Data Scientist</option><option>Frontend Developer</option><option>Backend Developer</option><option>DevOps Engineer</option><option>ML Engineer</option></select>
+                        <button class="btn btn-primary" onclick="rewriteBullet(this)">&#x1F916; Rewrite</button>
+                    </div>
+                    <div id="rewrite-result" class="rewrite-result hidden">
+                        <label>&#x2705; Improved:</label>
+                        <div class="rewrite-output" id="rewrite-output"></div>
+                        <button class="btn btn-ghost btn-sm" onclick="copyRewrite()">&#x1F4CB; Copy</button>
+                    </div>
+                    <div class="examples-section"><h4>&#x1F4D6; AI Rewrites from Your Resume</h4><div id="ai-rewrites"></div></div>
+                </div>
+            </div>
+            <div class="tab-content" id="tab-linkedin">
+                <div class="section-grid">
+                    <div class="panel">
+                        <h3>&#x1F4BC; LinkedIn Headline</h3>
+                        <div class="linkedin-headline" id="li-headline"></div>
+                        <h3 style="margin-top:24px">&#x1F4DD; About Summary</h3>
+                        <div class="linkedin-summary" id="li-summary"></div>
+                    </div>
+                    <div class="panel">
+                        <h3>&#x1F4A1; Optimization Tips</h3><div id="li-tips"></div>
+                        <div class="linkedin-checklist">
+                            <h4>&#x2705; Profile Checklist</h4>
+                            <label><input type="checkbox"> Professional headshot</label>
+                            <label><input type="checkbox"> Compelling headline</label>
+                            <label><input type="checkbox"> 300+ word About section</label>
+                            <label><input type="checkbox"> All experience with achievements</label>
+                            <label><input type="checkbox"> 50+ endorsed skills</label>
+                            <label><input type="checkbox"> Featured section with projects</label>
+                            <label><input type="checkbox"> 500+ connections</label>
+                            <label><input type="checkbox"> 3+ recommendations</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>

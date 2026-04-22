@@ -7,3 +7,4 @@
 - [2026-03-29T13:03:10Z] feat: add helper utility function
 - [2026-03-29T08:51:16Z] style: apply consistent code formatting
 - [2026-03-29T09:14:56Z] fix: handle null pointer exception
+- [2026-04-22T15:51:33Z] fix: handle null pointer exception
